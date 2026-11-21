@@ -1,292 +1,197 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Headroom</title>
 <style>
   :root {
     --ink: #14160f;
     --yellow: #f0c419;
-    --paper: #f7f5ee;
-    --red: #c0392b;
-    --green: #2e7d32;
+    --paper: #f7f6f0;
     --muted: #6b6e63;
+    --good: #2d6a3e;
+    --warn: #b45309;
+    --bad: #9b1c1c;
   }
-  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  * { margin:0; padding:0; box-sizing:border-box; }
   body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background: var(--paper); color: var(--ink);
-    padding: 12px; max-width: 480px; margin: 0 auto;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    padding: 16px;
+    max-width: 640px;
+    margin: 0 auto;
   }
-  header { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
-  h1 { font-size: 1.35rem; letter-spacing: .04em; }
-  .watermark {
-    font-size: .62rem; font-weight: 700; color: var(--yellow);
-    background: var(--ink); padding: 3px 8px; border-radius: 3px;
-    letter-spacing: .12em;
+  header { display:flex; align-items:baseline; gap:12px; margin-bottom:20px; }
+  h1 { font-size: 1.6rem; letter-spacing: -0.02em; }
+  .tag { background: var(--yellow); color: var(--ink); font-weight:700; font-size:0.75rem; padding:2px 8px; border-radius:4px; }
+  .card {
+    background: #fff;
+    border: 1px solid #ddd9c8;
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 14px;
   }
-  .profile-bar {
-    display:flex; align-items:center; gap:8px; margin-bottom:10px;
-    background:#fff; border:1px solid #ddd; border-radius:8px; padding:8px 10px;
+  label { display:block; font-size:0.8rem; font-weight:600; color:var(--muted); margin-bottom:4px; text-transform:uppercase; letter-spacing:0.04em; }
+  input, select {
+    width:100%; padding:10px 12px; font-size:1rem; border:1px solid #ccc7b3;
+    border-radius:6px; background:#fafaf5; margin-bottom:12px;
   }
-  .profile-bar .label { font-size:.7rem; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; }
-  .profile-bar .name { font-weight:700; flex:1; }
-  .profile-bar .draft { font-variant-numeric:tabular-nums; font-weight:700; }
-  .profile-bar button {
-    background:var(--yellow); border:none; border-radius:6px;
-    padding:6px 10px; font-weight:700; font-size:.8rem; cursor:pointer;
+  .row { display:flex; gap:10px; }
+  .row > div { flex:1; }
+  button {
+    background: var(--ink); color: var(--yellow); border:none; border-radius:6px;
+    padding:12px 18px; font-size:1rem; font-weight:700; cursor:pointer; width:100%;
   }
-  .stage-row { display:flex; gap:8px; margin-bottom:10px; }
-  .stage-row input, .stage-row select {
-    flex:1; padding:8px; border:1px solid #ccc; border-radius:6px;
-    font-size:1rem; font-variant-numeric:tabular-nums;
+  button:active { opacity:0.85; }
+  .result { text-align:center; padding:20px 0 8px; }
+  .clearance { font-size:3rem; font-weight:800; letter-spacing:-0.03em; }
+  .clearance.good { color:var(--good); }
+  .clearance.warn { color:var(--warn); }
+  .clearance.bad { color:var(--bad); }
+  .unit { font-size:1.1rem; color:var(--muted); }
+  .equation {
+    font-family: ui-monospace, "SF Mono", monospace; font-size:0.85rem;
+    background:#f0efe6; border-radius:6px; padding:10px 12px; margin:10px 0;
+    line-height:1.6; white-space:pre-wrap; word-break:break-word;
   }
-  .bridge-card {
-    background:#fff; border:1px solid #e0e0e0; border-radius:8px;
-    padding:10px 12px; margin-bottom:8px;
+  .meta { font-size:0.78rem; color:var(--muted); margin-top:6px; }
+  .profile-row { display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; }
+  .profile-row button {
+    width:auto; flex:1; min-width:90px; background:#e8e6db; color:var(--ink); font-weight:600;
   }
-  .bridge-card .title { font-weight:700; font-size:.95rem; }
-  .bridge-card .meta { font-size:.72rem; color:var(--muted); margin:2px 0 6px; }
-  .bridge-card .result { font-size:1.6rem; font-weight:800; font-variant-numeric:tabular-nums; }
-  .bridge-card .result.bad { color:var(--red); }
-  .bridge-card .result.good { color:var(--green); }
-  .bridge-card .equation { font-size:.68rem; color:var(--muted); margin-top:4px; line-height:1.45; }
-  .modal-bg {
-    display:none; position:fixed; inset:0; background:rgba(20,22,15,.55);
-    z-index:50; align-items:flex-end; justify-content:center;
-  }
-  .modal-bg.open { display:flex; }
-  .modal {
-    background:var(--paper); width:100%; max-width:480px; border-radius:12px 12px 0 0;
-    padding:16px; max-height:80vh; overflow:auto;
-  }
-  .modal h2 { font-size:1.05rem; margin-bottom:10px; }
-  .modal label { display:block; font-size:.72rem; color:var(--muted); margin:8px 0 3px; text-transform:uppercase; letter-spacing:.06em; }
-  .modal input { width:100%; padding:8px; border:1px solid #ccc; border-radius:6px; font-size:1rem; }
-  .modal .row { display:flex; gap:8px; }
-  .modal .row > div { flex:1; }
-  .modal .actions { display:flex; gap:8px; margin-top:14px; }
-  .modal .actions button { flex:1; padding:10px; border-radius:6px; border:none; font-weight:700; cursor:pointer; }
-  .btn-save { background:var(--yellow); color:var(--ink); }
-  .btn-del { background:#e8e6de; color:var(--red); }
-  .btn-cancel { background:#e8e6de; }
-  .plist { list-style:none; margin-bottom:8px; }
-  .plist li {
-    display:flex; justify-content:space-between; align-items:center;
-    padding:8px 0; border-bottom:1px solid #e0e0e0; cursor:pointer;
-  }
-  .plist li.active { color:var(--ink); font-weight:700; }
-  .plist .d { font-variant-numeric:tabular-nums; color:var(--muted); }
-  .add-btn { width:100%; padding:9px; border-radius:6px; border:1px dashed #bbb; background:transparent; font-weight:700; cursor:pointer; margin-top:4px; }
-  .freshness { font-size:.65rem; color:var(--muted); text-align:right; margin-bottom:4px; }
-  .freshness.stale { color:var(--red); font-weight:700; }
+  .profile-row button.active { background:var(--ink); color:var(--yellow); }
+  .test-pass { color:var(--good); font-weight:700; }
+  .test-fail { color:var(--bad); font-weight:700; }
+  footer { font-size:0.72rem; color:var(--muted); margin-top:24px; line-height:1.5; }
 </style>
 </head>
 <body>
-
 <header>
-  <h1>HEADROOM</h1>
-  <div class="watermark">NOT FOR NAVIGATION</div>
+  <h1>Headroom</h1>
+  <span class="tag">PLANNING ONLY</span>
 </header>
 
-<div class="profile-bar">
-  <div class="label">Air Draft</div>
-  <div class="name" id="activeName">Bridge Clear</div>
-  <div class="draft" id="activeDraft">46.0 ft</div>
-  <button onclick="openProfiles()">Manage</button>
-</div>
-
-<div class="stage-row">
-  <input type="number" id="stageInput" step="0.01" placeholder="Current pool stage (ft)">
-  <select id="poolSelect"></select>
-</div>
-<div class="freshness" id="freshness"></div>
-
-<div id="results"></div>
-
-<div class="modal-bg" id="modalBg">
-  <div class="modal">
-    <h2 id="modalTitle">Profiles</h2>
-    <ul class="plist" id="profileList"></ul>
-    <button class="add-btn" onclick="editProfile(null)">+ Add Profile</button>
-    <div class="actions">
-      <button class="btn-cancel" onclick="closeModal()">Close</button>
+<div class="card">
+  <label>Air-draft profile</label>
+  <div class="profile-row" id="profiles"></div>
+  <div class="row">
+    <div>
+      <label>Active height (ft)</label>
+      <input type="number" id="boatHeight" step="0.1" value="46">
     </div>
-    <div id="editor" style="display:none; margin-top:12px; border-top:1px solid #e0e0e0; padding-top:10px;">
-      <label>Name</label><input id="pfName">
-      <label>Air Draft (ft)</label><input id="pfDraft" type="number" step="0.1">
-      <label>Notes</label><input id="pfNotes" placeholder="optional">
-      <div class="actions">
-        <button class="btn-save" onclick="saveProfile()">Save</button>
-        <button class="btn-del" id="delBtn" onclick="deleteProfile()">Delete</button>
-      </div>
+    <div>
+      <label>Charted clearance (ft)</label>
+      <input type="number" id="charted" step="0.1" value="69">
     </div>
   </div>
+  <div class="row">
+    <div>
+      <label>Project pool (ft)</label>
+      <input type="number" id="projectPool" step="0.01" value="359">
+    </div>
+    <div>
+      <label>Current stage (ft)</label>
+      <input type="number" id="stage" step="0.01" value="354">
+    </div>
+  </div>
+  <label>Bridge name / notes</label>
+  <input type="text" id="bridgeName" placeholder="e.g. Belt Railroad, mi 317.6">
+  <label>Source &amp; date</label>
+  <input type="text" id="source" placeholder="e.g. USACE chart 2013, ENC">
+  <button onclick="compute()">Compute clearance</button>
 </div>
 
+<div class="card" id="outCard">
+  <div class="result">
+    <div class="clearance" id="clearanceVal">--</div>
+    <div class="unit">feet under the bridge</div>
+  </div>
+  <div class="equation" id="equation">Enter values and tap compute.</div>
+  <div class="meta" id="meta"></div>
+</div>
+
+<div class="card">
+  <label>Golden test (Route 20 fixture)</label>
+  <button onclick="runTest()" style="background:var(--yellow);color:var(--ink);">Run test — expect 28.0 ft</button>
+  <div class="meta" id="testResult"></div>
+</div>
+
+<footer>
+  Headroom is a planning aid only. It does not replace the chart, Coast Pilot, or looking at the bridge.
+  Clearance now = charted clearance − (current stage − project pool) − air draft.
+  Stage below pool adds clearance; stage above pool removes it. Always leave margin for squat, pitch, and wires.
+</footer>
+
 <script>
-// ---------- DATA ----------
-const POOLS = [
-  {id:"kentucky", name:"Kentucky (mile 22.4)", elev:359.00, datum:"NGVD29"},
-  {id:"pickwick", name:"Pickwick (mile 206.7)", elev:414.00, datum:"NGVD29"},
-  {id:"wilson",   name:"Wilson (mile 259.4)",   elev:507.00, datum:"NGVD29"},
-  {id:"wheeler",  name:"Wheeler (mile 274.9)",  elev:555.00, datum:"NGVD29"},
-  {id:"guntersville", name:"Guntersville (mile 349.0)", elev:595.00, datum:"NGVD29"},
-  {id:"nickajack", name:"Nickajack (mile 424.7)", elev:634.00, datum:"NGVD29"},
-  {id:"chickamauga", name:"Chickamauga (mile 471.0)", elev:682.00, datum:"NGVD29"},
-  {id:"wattsbar", name:"Watts Bar (mile 529.9)", elev:740.00, datum:"NGVD29"},
-  {id:"fortloudoun", name:"Fort Loudoun (mile 602.3)", elev:813.00, datum:"NGVD29"}
+const PROFILES = [
+  { name: "Bridge-clear", height: 46 },
+  { name: "Bimini-up", height: 49 },
+  { name: "Antenna-up", height: 52 }
 ];
+let activeProfile = 0;
 
-// Golden fixture: TN Rte 20, mile 134.9 — must compute 28.0
-const BRIDGES = [
-  {name:"TN Route 20 Hwy Bridge", mile:134.9, pool:"kentucky",
-   chartedPier:69.0, chartedCenter:70.6, coastPilot:null,
-   source:"USACE Chart TN134.9", sourceDate:"2013-01-01", datum:"NGVD29"}
-];
-
-const STORAGE_KEY = "headroom.profiles";
-let profiles = [];
-let activeId = null;
-let editingId = null;
-
-// ---------- INIT ----------
-(function init(){
-  const raw = localStorage.getItem(STORAGE_KEY);
-  if (raw) {
-    profiles = JSON.parse(raw);
-  } else {
-    profiles = [{id:uid(), name:"Bridge Clear", air_draft:46.0, notes:"Default — migrated from single value", is_default:true,
-                 created:new Date().toISOString(), updated:new Date().toISOString()}];
-    save();
-  }
-  activeId = profiles.find(p=>p.is_default)?profiles.find(p=>p.is_default).id:profiles[0].id;
-
-  const sel = document.getElementById("poolSelect");
-  POOLS.forEach(p=>{
-    const o = document.createElement("option");
-    o.value = p.id; o.textContent = p.name;
-    sel.appendChild(o);
-  });
-  sel.value = "kentucky";
-
-  // Golden test on load
-  const gt = compute("kentucky", 354.00, 46.0, BRIDGES[0]);
-  if (Math.abs(gt.clearance - 28.0) > 0.001) {
-    console.error("GOLDEN TEST FAILED", gt);
-    alert("Golden test failed: expected 28.0, got " + gt.clearance);
-  } else {
-    console.log("Golden test passed: 28.0 ft");
-  }
-
-  render();
-})();
-
-function uid(){ return Math.random().toString(36).slice(2,10); }
-function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(profiles)); }
-function activeProfile(){ return profiles.find(p=>p.id===activeId); }
-
-// ---------- COMPUTE ----------
-function compute(poolId, stage, draft, br){
-  const pool = POOLS.find(p=>p.id===poolId);
-  const delta = pool.elev - stage; // positive when water is BELOW pool -> adds clearance
-  const pier = br.chartedPier + delta - draft;
-  const center = br.chartedCenter + delta - draft;
-  // Conservative: use lowest span
-  const clearance = Math.min(pier, center);
-  const noClear = clearance < 0;
-  return {pool, delta, pier, center, clearance: Math.round(clearance*10)/10, noClear,
-          equation: br.chartedPier + " + (" + pool.elev + " - " + stage + ") - " + draft + " = " + Math.round(clearance*10)/10);
-}
-
-function render(){
-  const poolId = document.getElementById("poolSelect").value;
-  const stage = parseFloat(document.getElementById("stageInput").value);
-  const ap = activeProfile();
-  document.getElementById("activeName").textContent = ap.name;
-  document.getElementById("activeDraft").textContent = ap.air_draft.toFixed(1) + " ft";
-
-  const fr = document.getElementById("freshness");
-  fr.textContent = "Stage: manual entry — verify against TVA";
-  fr.className = "freshness";
-
-  const res = document.getElementById("results");
-  res.innerHTML = "";
-  if (!stage && stage !== 0) { res.innerHTML = "<p style='color:var(--muted);font-size:.85rem'>Enter a pool stage to compute.</p>"; return; }
-
-  BRIDGES.forEach(br=>{
-    if (br.pool !== poolId) return;
-    const c = compute(poolId, stage, ap.air_draft, br);
-    const card = document.createElement("div");
-    card.className = "bridge-card";
-    card.innerHTML = "<div class='title'>" + br.name + " — mile " + br.mile + "</div>" +
-      "<div class='meta'>Charted " + br.chartedPier + " ft pier / " + br.chartedCenter + " ft center @ pool " +
-      c.pool.elev + " " + c.pool.datum + " · source: " + br.source + "</div>" +
-      "<div class='result " + (c.noClear?"bad":"good") + "'>" + (c.noClear?"DOES NOT CLEAR":c.clearance + " ft") + "</div>" +
-      "<div class='equation'>" + c.equation + "<br>Pier: " + c.pier.toFixed(1) + " · Center: " + c.center.toFixed(1) + "</div>";
-    res.appendChild(card);
+function renderProfiles() {
+  const el = document.getElementById("profiles");
+  el.innerHTML = "";
+  PROFILES.forEach((p, i) => {
+    const b = document.createElement("button");
+    b.textContent = p.name + " (" + p.height + "')";
+    if (i === activeProfile) b.classList.add("active");
+    b.onclick = () => { activeProfile = i; document.getElementById("boatHeight").value = p.height; renderProfiles(); };
+    el.appendChild(b);
   });
 }
 
-document.getElementById("stageInput").addEventListener("input", render);
-document.getElementById("poolSelect").addEventListener("change", render);
+function compute() {
+  const charted = parseFloat(document.getElementById("charted").value);
+  const stage = parseFloat(document.getElementById("stage").value);
+  const pool = parseFloat(document.getElementById("projectPool").value);
+  const boat = parseFloat(document.getElementById("boatHeight").value);
+  const name = document.getElementById("bridgeName").value || "Bridge";
+  const source = document.getElementById("source").value || "unspecified source";
 
-// ---------- PROFILES MODAL ----------
-function openProfiles(){
-  editingId = null;
-  document.getElementById("editor").style.display = "none";
-  const ul = document.getElementById("profileList");
-  ul.innerHTML = "";
-  profiles.forEach(p=>{
-    const li = document.createElement("li");
-    li.className = p.id===activeId?"active":"";
-    li.innerHTML = "<span>" + p.name + (p.is_default?" ★":"") + "</span><span class='d'>" + p.air_draft.toFixed(1) + " ft</span>";
-    li.onclick = ()=>{ activeId = p.id; save(); render(); closeModal(); };
-    ul.appendChild(li);
-  });
-  document.getElementById("modalBg").classList.add("open");
-}
-function closeModal(){ document.getElementById("modalBg").classList.remove("open"); }
-function editProfile(id){
-  editingId = id;
-  const ed = document.getElementById("editor");
-  ed.style.display = "block";
-  if (id){
-    const p = profiles.find(x=>x.id===id);
-    document.getElementById("pfName").value = p.name;
-    document.getElementById("pfDraft").value = p.air_draft;
-    document.getElementById("pfNotes").value = p.notes||"";
-    document.getElementById("delBtn").style.display = profiles.length>1?"":"none";
-  } else {
-    document.getElementById("pfName").value = "";
-    document.getElementById("pfDraft").value = "";
-    document.getElementById("pfNotes").value = "";
-    document.getElementById("delBtn").style.display = "none";
+  if ([charted, stage, pool, boat].some(v => isNaN(v))) {
+    document.getElementById("clearanceVal").textContent = "err";
+    document.getElementById("equation").textContent = "All four numbers are required.";
+    return;
   }
-  document.getElementById("pfName").focus();
+
+  const delta = stage - pool;
+  const clearance = charted - delta - boat;
+  const el = document.getElementById("clearanceVal");
+  el.textContent = clearance.toFixed(1);
+  el.className = "clearance " + (clearance >= 10 ? "good" : clearance >= 3 ? "warn" : "bad");
+
+  const adj = -delta;
+  const sign = adj >= 0 ? "+" : "−";
+  document.getElementById("equation").textContent =
+    charted + " (charted)\n" + sign + " " + Math.abs(adj).toFixed(2) + " (pool " + pool + " − stage " + stage + ")\n" + "− " + boat + " (air draft: " + PROFILES[activeProfile].name + ")\n= " + clearance.toFixed(1) + " ft";
+
+  document.getElementById("meta").textContent =
+    name + " · " + source + " · profile: " + PROFILES[activeProfile].name;
 }
-function saveProfile(){
-  const name = document.getElementById("pfName").value.trim();
-  const draft = parseFloat(document.getElementById("pfDraft").value);
-  const notes = document.getElementById("pfNotes").value.trim();
-  if (!name || isNaN(draft)) { alert("Name and air draft required"); return; }
-  if (editingId){
-    const p = profiles.find(x=>x.id===editingId);
-    p.name = name; p.air_draft = draft; p.notes = notes; p.updated = new Date().toISOString();
+
+function runTest() {
+  document.getElementById("charted").value = 69;
+  document.getElementById("stage").value = 354;
+  document.getElementById("projectPool").value = 359;
+  document.getElementById("boatHeight").value = 46;
+  activeProfile = 0;
+  renderProfiles();
+  compute();
+  const v = parseFloat(document.getElementById("clearanceVal").textContent);
+  const r = document.getElementById("testResult");
+  if (Math.abs(v - 28.0) < 0.05) {
+    r.innerHTML = '<span class="test-pass">PASS</span> — got ' + v.toFixed(1) + ' ft, expected 28.0 ft. Stage-delta sign is correct (low water adds clearance).';
   } else {
-    profiles.push({id:uid(), name, air_draft:draft, notes, is_default:false,
-                   created:new Date().toISOString(), updated:new Date().toISOString()});
+    r.innerHTML = '<span class="test-fail">FAIL</span> — got ' + v.toFixed(1) + ' ft, expected 28.0 ft. Check the formula: charted − (stage − pool) − boat.';
   }
-  save(); openProfiles(); render();
 }
-function deleteProfile(){
-  if (!editingId || profiles.length<=1) return;
-  if (!confirm("Delete this profile?")) return;
-  profiles = profiles.filter(p=>p.id!==editingId);
-  if (activeId===editingId) activeId = profiles[0].id;
-  save(); openProfiles(); render();
-}
+
+renderProfiles();
+compute();
 </script>
 </body>
 </html>
